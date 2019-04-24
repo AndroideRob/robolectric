@@ -250,19 +250,13 @@ public class ShadowInstrumentation {
     broadcastIntents.add(intent);
 
     List<Wrapper> result = new ArrayList<>();
-
-    List<Wrapper> copy = new ArrayList<>();
-    copy.addAll(registeredReceivers);
-    String intentClass =
-        intent.getComponent() != null ? intent.getComponent().getClassName() : null;
-    for (Wrapper wrapper : copy) {
-      if ((hasMatchingPermission(wrapper.broadcastPermission, receiverPermission)
-              && wrapper.intentFilter.matchAction(intent.getAction()))
-          || (intentClass != null
-              && intentClass.equals(wrapper.broadcastReceiver.getClass().getName()))) {
-        final int match =
-            wrapper.intentFilter.matchData(intent.getType(), intent.getScheme(), intent.getData());
-        if (match != IntentFilter.NO_MATCH_DATA && match != IntentFilter.NO_MATCH_TYPE) {
+    for (Wrapper wrapper : new ArrayList<>(registeredReceivers)) {
+      if (hasMatchingPermission(wrapper.broadcastPermission, receiverPermission)) {
+        String intentClass =
+            intent.getComponent() != null ? intent.getComponent().getClassName() : null;
+        if (wrapper.broadcastReceiver.getClass().getName().equals(intentClass)
+            || wrapper.intentFilter.match(null, intent, false, "ShadowInstrumentation")
+                > 0) {
           result.add(wrapper);
         }
       }
